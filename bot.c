@@ -35,7 +35,7 @@ void on_message_create(struct discord *client, const struct discord_message *eve
   CURLcode res;
   CURL *curl = curl_easy_init();
 
-  if(curl) {
+  if (curl) {
     curl_easy_setopt(curl, CURLOPT_URL, "https://api.viewbits.com/v1/uselessfacts?mode=random");
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cb);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
