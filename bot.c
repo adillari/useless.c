@@ -30,6 +30,19 @@ static size_t write_response(char *data, size_t size, size_t nmemb, void *client
   return realsize;
 }
 
+static char* get_start(char *response) {
+  const char *key = "\"text\":";
+  char *start = strstr(response, key);
+
+  return (start + 8);
+}
+
+static int calculate_length(char *start) {
+  char *stop = strstr(start, "\"");
+
+  return (stop - start);
+}
+
 void on_message_create(struct discord *client, const struct discord_message *event) {
   if (strcmp(event->content, "fact") != 0) return;
 
@@ -43,9 +56,16 @@ void on_message_create(struct discord *client, const struct discord_message *eve
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
     res = curl_easy_perform(curl);
 
+    char *fact_start = get_start(chunk.response);
+    assert(fact_start != NULL);
+    int fact_length = calculate_length(fact_start);
+    char fact[fact_length];
+    strncpy(fact, fact_start, fact_length);
+    fact[fact_length] = '\0';
+
     if (res == CURLE_OK) {
       struct discord_create_message params = {
-        .content = chunk.response,
+        .content = fact,
         .message_reference = &(struct discord_message_reference) {
           .message_id = event->id,
           .channel_id = event->channel_id,
@@ -73,4 +93,6 @@ int main(void) {
 
   discord_cleanup(client);
   ccord_global_cleanup();
+
+  return 0;
 }
