@@ -13,7 +13,7 @@ struct memory {
   size_t size;
 };
 
-static size_t cb(char *data, size_t size, size_t nmemb, void *clientp)
+static size_t write_response(char *data, size_t size, size_t nmemb, void *clientp)
 {
   size_t realsize = size * nmemb;
   struct memory *mem = (struct memory *)clientp;
@@ -39,7 +39,7 @@ void on_message_create(struct discord *client, const struct discord_message *eve
 
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_URL, RANDOM_FACTS_URL);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cb);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_response);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
     res = curl_easy_perform(curl);
 
