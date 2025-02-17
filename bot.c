@@ -6,6 +6,8 @@
 #include <curl/curl.h>
 #include "concord/discord.h"
 
+#define RANDOM_FACTS_URL "https://api.viewbits.com/v1/uselessfacts?mode=random"
+
 struct memory {
   char *response;
   size_t size;
@@ -18,7 +20,7 @@ static size_t cb(char *data, size_t size, size_t nmemb, void *clientp)
  
   char *ptr = realloc(mem->response, mem->size + realsize + 1);
   if(!ptr)
-    return 0;  /* out of memory */
+    return 0;  // out of memory
  
   mem->response = ptr;
   memcpy(&(mem->response[mem->size]), data, realsize);
@@ -36,7 +38,7 @@ void on_message_create(struct discord *client, const struct discord_message *eve
   CURL *curl = curl_easy_init();
 
   if (curl) {
-    curl_easy_setopt(curl, CURLOPT_URL, "https://api.viewbits.com/v1/uselessfacts?mode=random");
+    curl_easy_setopt(curl, CURLOPT_URL, RANDOM_FACTS_URL);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, cb);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
     res = curl_easy_perform(curl);
