@@ -38,7 +38,7 @@ static char* get_start(char *response) {
 }
 
 static int calculate_length(char *start) {
-  char *stop = strstr(start, "\"");
+  char *stop = strstr(start, "\",\"");
 
   return (stop - start);
 }
