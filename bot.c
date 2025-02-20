@@ -30,7 +30,7 @@ static size_t write_response(char *data, size_t size, size_t nmemb, void *client
   return realsize;
 }
 
-static char* get_start(char *response) {
+static char* get_fact_start(char *response) {
   if (strstr(response, "Rate limit exceeded") != NULL) return NULL;
 
   const char *key = "\"text\":";
@@ -39,7 +39,7 @@ static char* get_start(char *response) {
   return (start + 8);
 }
 
-static int calculate_length(char *start) {
+static int get_fact_length(char *start) {
   if (start == NULL) return -1;
 
   char *stop = strstr(start, "\",\"");
@@ -57,7 +57,7 @@ void on_message_create(struct discord *client, const struct discord_message *eve
     .guild_id = event->guild_id,
   };
 
-  char *content = "CURL FAILED TO INIT";
+  char *content = "Couldn't retrieve fact.";
   CURL *curl = curl_easy_init();
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_URL, RANDOM_FACTS_URL);
@@ -65,10 +65,10 @@ void on_message_create(struct discord *client, const struct discord_message *eve
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
     CURLcode res = curl_easy_perform(curl);
 
-    content = "API error";
     if (res == CURLE_OK) {
-      content = get_start(chunk.response); // returns NULL if couldn't find start
-      int fact_length = calculate_length(content); // returns -1 if content is NULL
+      content = get_fact_start(chunk.response); // returns NULL if couldn't find start
+      int fact_length = get_fact_length(content); // returns -1 if given is NULL
+
       if (fact_length == -1) {
         content = "Too fast! Try again in 30 seconds.";
       } else {
