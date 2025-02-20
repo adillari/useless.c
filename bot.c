@@ -7,6 +7,7 @@
 #include "concord/discord.h"
 
 #define RANDOM_FACTS_URL "https://api.viewbits.com/v1/uselessfacts?mode=random"
+#define CONFIG_FILE "./config.json"
 
 struct memory {
   char *response;
@@ -19,8 +20,7 @@ static size_t write_response(char *data, size_t size, size_t nmemb, void *client
   struct memory *mem = (struct memory *)clientp;
  
   char *ptr = realloc(mem->response, mem->size + realsize + 1);
-  if(!ptr)
-    return 0;  // out of memory
+  if(!ptr) return 0; // out of memory
  
   mem->response = ptr;
   memcpy(&(mem->response[mem->size]), data, realsize);
@@ -72,7 +72,7 @@ void on_message_create(struct discord *client, const struct discord_message *eve
       if (fact_length == -1) {
         content = "Too fast! Try again in 30 seconds.";
       } else {
-        content[fact_length] = '\0';
+        content[fact_length] = '\0'; // If we got here, then :)
       }
     }
   }
@@ -86,7 +86,7 @@ void on_message_create(struct discord *client, const struct discord_message *eve
 
 int main(void) {
   ccord_global_init();
-  struct discord *client = discord_config_init("./config.json"); // CONFIG_FILE
+  struct discord *client = discord_config_init(CONFIG_FILE);
   assert(client || "Couldn't initialize client");
 
   discord_add_intents(client, DISCORD_GATEWAY_MESSAGE_CONTENT);
