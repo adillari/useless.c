@@ -65,15 +65,16 @@ void on_message_create(struct discord *client, const struct discord_message *eve
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
     CURLcode res = curl_easy_perform(curl);
 
+    content = "API error";
     if (res == CURLE_OK) {
-      content = get_start(chunk.response);
-      int fact_length = calculate_length(content); // content will be NULL if it couldn't find the start
-      if (fact_length == -1)
-        content = "Slow Down!";
-      else
+      content = get_start(chunk.response); // returns NULL if couldn't find start
+      int fact_length = calculate_length(content); // returns -1 if content is NULL
+      if (fact_length == -1) {
+        content = "Too fast! Try again in 30 seconds.";
+      } else {
         content[fact_length] = '\0';
-    } else
-      content = "Slow down!";
+      }
+    }
   }
 
   struct discord_create_message params = { .content = content, .message_reference = &message_reference };
