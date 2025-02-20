@@ -31,6 +31,8 @@ static size_t write_response(char *data, size_t size, size_t nmemb, void *client
 }
 
 static char* get_start(char *response) {
+  if (strstr(response, "Rate limit exceeded") != NULL) return NULL;
+
   const char *key = "\"text\":";
   char *start = strstr(response, key);
 
@@ -38,46 +40,47 @@ static char* get_start(char *response) {
 }
 
 static int calculate_length(char *start) {
+  if (start == NULL) return -1;
+
   char *stop = strstr(start, "\",\"");
 
   return (stop - start);
 }
 
 void on_message_create(struct discord *client, const struct discord_message *event) {
-  if (strcmp(event->content, "fact") != 0) return;
+  if (strcmp(event->content, "fact") != 0) return; // bot only responds to "fact"
 
-  struct memory chunk = {0};
-  CURLcode res;
+  struct memory chunk = {0}; // init memory to store api response
+  struct discord_message_reference message_reference = { // we will be responding to the "fact" message
+    .message_id = event->id,
+    .channel_id = event->channel_id,
+    .guild_id = event->guild_id,
+  };
+
+  char *content = "CURL FAILED TO INIT";
   CURL *curl = curl_easy_init();
-
   if (curl) {
     curl_easy_setopt(curl, CURLOPT_URL, RANDOM_FACTS_URL);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_response);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, (void *)&chunk);
-    res = curl_easy_perform(curl);
-
-    char *fact_start = get_start(chunk.response);
-    assert(fact_start != NULL);
-    int fact_length = calculate_length(fact_start);
-    char fact[fact_length];
-    strncpy(fact, fact_start, fact_length);
-    fact[fact_length] = '\0';
+    CURLcode res = curl_easy_perform(curl);
 
     if (res == CURLE_OK) {
-      struct discord_create_message params = {
-        .content = fact,
-        .message_reference = &(struct discord_message_reference) {
-          .message_id = event->id,
-          .channel_id = event->channel_id,
-          .guild_id = event->guild_id,
-        },
-      };
-      discord_create_message(client, event->channel_id, &params, NULL);
-    }
-
-    free(chunk.response);
-    curl_easy_cleanup(curl);
+      content = get_start(chunk.response);
+      int fact_length = calculate_length(content); // content will be NULL if it couldn't find the start
+      if (fact_length == -1)
+        content = "Slow Down!";
+      else
+        content[fact_length] = '\0';
+    } else
+      content = "Slow down!";
   }
+
+  struct discord_create_message params = { .content = content, .message_reference = &message_reference };
+  discord_create_message(client, event->channel_id, &params, NULL);
+
+  free(chunk.response);
+  curl_easy_cleanup(curl);
 }
 
 int main(void) {
